@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vape Smoke Effect</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #111;
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        .vape {
+            width: 60px;
+            height: 150px;
+            background: linear-gradient(to bottom, #222, #555);
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+            margin-bottom: 20px;
+        }
+        .vape:after {
+            content: '';
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 10px;
+            background: #333;
+            border-radius: 5px;
+        }
+        .smoke {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.4);
+            border-radius: 50%;
+            opacity: 0;
+            filter: blur(8px);
+        }
+        @keyframes smokeRise {
+            0% {
+                transform: translate(-50%, 0) scale(1);
+                opacity: 0.8;
+            }
+            25% {
+                opacity: 0.6;
+            }
+            100% {
+                transform: translate(calc(-50% + var(--wind, 0px)), -300px) scale(8);
+                opacity: 0;
+            }
+        }
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            width: 250px;
+        }
+        .color-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .color-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid #555;
+            transition: transform 0.2s;
+        }
+        .color-btn:hover {
+            transform: scale(1.1);
+            border-color: white;
+        }
+        .slider-container {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        label {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        input[type="range"] {
+            width: 100%;
+            background: #333;
+            height: 8px;
+            border-radius: 4px;
+            outline: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="vape" id="vape"></div>
+    
+    <div class="controls">
+        <h3 style="margin-top: 0; text-align: center;">Vape Customizer</h3>
+        
+        <div>
+            <p style="margin-bottom: 5px;">Vape Color:</p>
+            <div class="color-buttons">
+                <div class="color-btn" style="background: linear-gradient(to bottom, #222, #555);" data-color="gray"></div>
+                <div class="color-btn" style="background: linear-gradient(to bottom, #600, #c00);" data-color="red"></div>
+                <div class="color-btn" style="background: linear-gradient(to bottom, #006, #00c);" data-color="blue"></div>
+                <div class="color-btn" style="background: linear-gradient(to bottom, #060, #0c0);" data-color="green"></div>
+                <div class="color-btn" style="background: linear-gradient(to bottom, #606, #c0c);" data-color="purple"></div>
+            </div>
+        </div>
+        
+        <div class="slider-container">
+            <label>
+                Smoke Size:
+                <span id="smokeSize">3.0</span>
+            </label>
+            <input type="range" id="smokeSizeSlider" min="1" max="5" step="0.1" value="3.0">
+        </div>
+        
+        <div class="slider-container">
+            <label>
+                Smoke Density:
+                <span id="smokeDensity">5</span>
+            </label>
+            <input type="range" id="smokeDensitySlider" min="1" max="10" step="1" value="5">
+        </div>
+    </div>
+    
+    <script>
+        const vape = document.getElementById('vape');
+        const smokeSize = document.getElementById('smokeSize');
+        const smokeSizeSlider = document.getElementById('smokeSizeSlider');
+        const smokeDensity = document.getElementById('smokeDensity');
+        const smokeDensitySlider = document.getElementById('smokeDensitySlider');
+        const colorButtons = document.querySelectorAll('.color-btn');
+        
+        let isReleasing = false;
+        let releaseInterval;
+        let currentSmokeSize = 3.0;
+        let currentSmokeDensity = 5;
+        
+        // Set up event listeners
+        vape.addEventListener('mousedown', startSmoking);
+        vape.addEventListener('touchstart', startSmoking);
+        document.addEventListener('mouseup', stopSmoking);
+        document.addEventListener('touchend', stopSmoking);
+        
+        // Color selection
+        colorButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const color = button.getAttribute('data-color');
+                setVapeColor(color);
+            });
+        });
+        
+        // Smoke size slider
+        smokeSizeSlider.addEventListener('input', () => {
+            currentSmokeSize = parseFloat(smokeSizeSlider.value);
+            smokeSize.textContent = currentSmokeSize.toFixed(1);
+        });
+        
+        // Smoke density slider
+        smokeDensitySlider.addEventListener('input', () => {
+            currentSmokeDensity = parseInt(smokeDensitySlider.value);
+            smokeDensity.textContent = currentSmokeDensity;
+        });
+        
+        function setVapeColor(color) {
+            switch(color) {
+                case 'gray':
+                    vape.style.background = 'linear-gradient(to bottom, #222, #555)';
+                    break;
+                case 'red':
+                    vape.style.background = 'linear-gradient(to bottom, #600, #c00)';
+                    break;
+                case 'blue':
+                    vape.style.background = 'linear-gradient(to bottom, #006, #00c)';
+                    break;
+                case 'green':
+                    vape.style.background = 'linear-gradient(to bottom, #060, #0c0)';
+                    break;
+                case 'purple':
+                    vape.style.background = 'linear-gradient(to bottom, #606, #c0c)';
+                    break;
+            }
+        }
+        
+        function startSmoking(e) {
+            e.preventDefault();
+            if (isReleasing) return;
+            
+            isReleasing = true;
+            releaseSmoke();
+            releaseInterval = setInterval(releaseSmoke, 300);
+        }
+        
+        function stopSmoking() {
+            if (!isReleasing) return;
+            
+            isReleasing = false;
+            clearInterval(releaseInterval);
+        }
+        
+        function releaseSmoke() {
+            const vapeRect = vape.getBoundingClientRect();
+            const vapeTop = vapeRect.top;
+            const vapeCenter = vapeRect.left + vapeRect.width / 2;
+            
+            for (let i = 0; i < currentSmokeDensity; i++) {
+                setTimeout(() => {
+                    const smoke = document.createElement('div');
+                    smoke.className = 'smoke';
+                    document.body.appendChild(smoke);
+                    
+                    // Increased base smoke size
+                    const baseSize = 15 * currentSmokeSize;
+                    const size = Math.random() * (baseSize/2) + baseSize/2;
+                    smoke.style.width = `${size}px`;
+                    smoke.style.height = `${size}px`;
+                    
+                    // Position at the top of the vape
+                    smoke.style.left = `${vapeCenter}px`;
+                    smoke.style.top = `${vapeTop}px`;
+                    
+                    // Random wind effect
+                    const wind = Math.random() * 120 - 60;
+                    smoke.style.setProperty('--wind', `${wind}px`);
+                    
+                    // Random duration for more natural effect
+                    const duration = Math.random() * 2 + 2;
+                    smoke.style.animation = `smokeRise ${duration}s ease-out forwards`;
+                    
+                    // Remove the element after animation
+                    setTimeout(() => smoke.remove(), duration * 1000);
+                }, i * 50);
+            }
+        }
+    </script>
+</body>
+</html>
